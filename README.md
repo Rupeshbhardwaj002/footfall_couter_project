@@ -48,3 +48,20 @@ pip install ultralytics opencv-python numpy
 4.	The processed video (output_video.mp4) will be generated with bounding boxes and tracking overlays.
 5.	The output_video.mp4 can be directly downloaded or run -> flies.download(“content/output_video.mp4”)
 
+## 5 Drawbacks
+Our project is working fine for our sample 1 result where we have only one person(its me) only without any (overlapping) but fails in sample 2 result where at 0.3 seconds a cyclist and a girl both gets out at same time but our model assigns it only one. Same happens with sample 3 results.
+Hence we have these all isssues -
+### Overlapping People issue
+•	When two or more people pass very close together or overlap, the tracker may merge or lose identities.
+•	This causes miscounting (ex- one person counted twice or missed entirely).
+### Dependence on Video Angle issue
+•	The system performs best when the camera is positioned directly facing or above the ROI (doorway).
+•	Side-angle or tilted footage can cause centroid detection errors, reducing accuracy.
+•	The ROI (vertical line) is fixed. If the video frame or scene changes (camera moves or shakes), accuracy drops.
+•	Dynamic or adaptive ROI positioning is not implemented.
+### Limited Real-Time Performance
+•	Since YOLOv8 runs on CPU (if GPU not available), frame processing may be slower for real-time applications.
+Counting Logic Simplification
+•	The entry/exit counting logic assumes a clean left<->right or right<->left movement.
+•	Complex paths (like diagonal or circular motion) may not be interpreted correctly.
+
