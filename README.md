@@ -40,7 +40,7 @@ It was hard to find videos matching our exact requirement, so a **self-recorded 
 ### Installation
 ```bash
 pip install ultralytics opencv-python numpy 
-
+``` 
 ### Run the notebook:
 1.	Open footfall_counter.ipynb in Google Colab or Jupyter.
 2.	Upload your input video (u can also check our output file where I have given the download link of our input videos u can also try them).
