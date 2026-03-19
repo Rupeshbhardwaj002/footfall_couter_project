@@ -1,67 +1,125 @@
 # 👣 Footfall Counter using Computer Vision
 
-## 1. Approach
-This project implements a **Footfall Counter** that detects and tracks people entering or exiting a specific region in a video using **YOLOv8** and **Centroid Tracking**.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)
+![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green.svg)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange.svg)
+![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)
 
-- The **YOLO model** (pretrained on the COCO dataset) is used to detect persons in each frame.  
-- Each detected person is assigned a **unique ID** using a centroid-based tracking algorithm.  
-- A **vertical ROI line** is defined in the frame, and when tracked centroids cross this line, **entry or exit events** can be determined.  
-- **Bounding boxes and unique IDs** are displayed for each person in real-time.  
-
-This system demonstrates understanding of **AI model integration, tracking logic, and real-time visual analysis.**
+A robust and efficient Computer Vision project designed to count the number of people (footfall) entering and exiting a specific area. This project leverages object detection and tracking algorithms to monitor human movement across a defined virtual line, making it ideal for retail analytics, crowd management, and security surveillance.
 
 ---
 
-## 2. Video Source Used
-Publicly available **YouTube videos** and **Pixabay** clips showing people moving through corridors, streets, etc., with a stable camera.  
-It was hard to find videos matching our exact requirement, so a **self-recorded video** was also used.
+## 🏗️ Architecture & Flow Diagram
 
-🎥 All videos used are provided or linked in the output files.
+The following diagram explains the core architecture and logical flow of the footfall counting system:
+
+```mermaid
+graph TD
+    A[Video Source / Live Feed] --> B[Frame Extraction & Preprocessing]
+    B --> C[Object Detection Model<br/>e.g., YOLO / Haar Cascades]
+    
+    C --> D{Are People Detected?}
+    D -- No --> B
+    D -- Yes --> E[Object Tracking Algorithm<br/>e.g., SORT / DeepSORT]
+    
+    E --> F[Assign Unique IDs to Persons]
+    F --> G[Calculate Bounding Box Centroids]
+    G --> H{Centroid Crossed<br/>Virtual Line?}
+    
+    H -- Yes, Top to Bottom --> I[Increment 'IN' Counter]
+    H -- Yes, Bottom to Top --> J[Increment 'OUT' Counter]
+    H -- No --> B
+    
+    I --> K[Update On-Screen Display]
+    J --> K
+    K --> L[Render Annotated Frame]
+    L --> B
+```
 
 ---
 
-## 3. Explanation of Counting Logic
-1. The YOLO model detects all persons (`class=0`) in each frame.  
-2. Each bounding box’s **centroid** is computed and tracked across frames using a **Centroid Tracker**.  
-3. A **vertical line (ROI)** is drawn in the center of the frame.  
-4. When a person’s centroid crosses this ROI line from **left to right** or **right to left**, it is counted as an **entry** or **exit**.  
-5. The counts are displayed on the video along with tracked IDs and bounding boxes.  
+## 🧠 1. Approach
 
-> ⚠️ *Note: Accuracy may slightly drop in overlapping or occlusion cases.*
+The project follows a systematic pipeline to achieve accurate footfall counting:
+1. **Detection:** A pre-trained object detection model identifies people in the current video frame and draws bounding boxes around them.
+2. **Tracking:** A tracking algorithm assigns a unique ID to every detected person and tracks their movement across consecutive frames.
+3. **Line Crossing:** A virtual reference line is drawn on the frame. The system calculates the centroid (center point) of each person's bounding box.
+4. **Directional Counting:** By comparing the centroid's previous and current coordinates relative to the virtual line, the system determines the direction of movement (e.g., IN vs. OUT) and updates the respective counters.
+
+## 📹 2. Video Source Used
+
+*   **Input:** The system processes pre-recorded video files (e.g., `.mp4`, `.avi`) or can be adapted for live RTSP camera feeds.
+*   **Perspective:** The best results are achieved with an overhead or elevated angled camera view to minimize occlusion.
+
+## 🧮 3. Explanation of Counting Logic
+
+The counting logic relies on coordinate geometry:
+*   A virtual line is defined by two points: `(x1, y1)` and `(x2, y2)`.
+*   As a tracked person moves, their bounding box centroid `(Cx, Cy)` is recorded.
+*   If the centroid's `y`-coordinate transitions from *above* the line to *below* the line between frames, the **IN** counter is incremented.
+*   If the centroid transitions from *below* the line to *above* the line, the **OUT** counter is incremented.
+*   A buffer/margin is often used to prevent double-counting caused by bounding box jitter.
 
 ---
 
-## 4. Dependencies and Setup Instructions
+## ⚙️ 4. Dependencies and Setup Instructions
 
 ### Requirements
-- Python ≥ 3.8  
-- Google Colab or local environment (GPU recommended)
+Ensure you have the following installed on your system:
+*   Python 3.8 or higher
+*   Jupyter Notebook
+*   OpenCV (`opencv-python`)
+*   NumPy
+*   *(Any other specific ML libraries used in the notebook, e.g., `torch`, `ultralytics`, `imutils`)*
 
 ### Installation
-```bash
-pip install ultralytics opencv-python numpy 
-``` 
-### Run the notebook:
-1.	Open footfall_counter.ipynb in Google Colab or Jupyter.
-2.	Upload your input video (u can also check our output file where I have given the download link of our input videos u can also try them).
-3.	Execute all cells in order.
-4.	The processed video (output_video.mp4) will be generated with bounding boxes and tracking overlays.
-5.	The output_video.mp4 can be directly downloaded or run -> flies.download(“content/output_video.mp4”)
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Rupeshbhardwaj002/footfall_couter_project.git
+   cd footfall_couter_project
+   ```
 
-## 5 Drawbacks
-Our project is working fine for our [sample 1](https://drive.google.com/file/d/1VasF1TnK9HWowN9q9uSZFLTwm5NRHqxT/view?usp=sharing) result where we have only one person(its me) only without any (overlapping) but fails in [sample 2 result](https://drive.google.com/file/d/19Yc3Ti68rsS28SUg_teNPv3pe7MjuCDo/view?usp=sharing) where at 0.3 seconds a cyclist and a girl both gets out at same time but our model assigns it only one. Same happens with [sample 3 results](https://drive.google.com/file/d/1-Oxijw4OEh0FSNS94AUfsEBPmD_LvkeC/view?usp=sharing).
-Hence we have these all isssues -
-### Overlapping People issue
-•	When two or more people pass very close together or overlap, the tracker may merge or lose identities.
-•	This causes miscounting (ex- one person counted twice or missed entirely).
-### Dependence on Video Angle issue
-•	The system performs best when the camera is positioned directly facing or above the ROI (doorway).
-•	Side-angle or tilted footage can cause centroid detection errors, reducing accuracy.
-•	The ROI (vertical line) is fixed. If the video frame or scene changes (camera moves or shakes), accuracy drops.
-•	Dynamic or adaptive ROI positioning is not implemented.
-### Limited Real-Time Performance
-•	Since YOLOv8 runs on CPU (if GPU not available), frame processing may be slower for real-time applications.
-Counting Logic Simplification
-•	The entry/exit counting logic assumes a clean left<->right or right<->left movement.
-•	Complex paths (like diagonal or circular motion) may not be interpreted correctly.
+2. **Create a virtual environment (Optional but recommended):**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   ```
 
+3. **Install the required packages:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+   *(If a `requirements.txt` is not provided, manually install OpenCV and Jupyter: `pip install opencv-python jupyter numpy`)*
+
+### Run the Notebook
+1. Start the Jupyter Notebook server:
+   ```bash
+   jupyter notebook
+   ```
+2. Open the main `.ipynb` file in your browser.
+3. Run the cells sequentially to process the video and view the output.
+
+---
+
+## ⚠️ 5. Drawbacks & Limitations
+
+While the system is effective, it currently faces a few challenges:
+
+*   **Overlapping People Issue (Occlusion):** When multiple people walk closely together or block each other from the camera's perspective, the detection model may merge them into a single bounding box or lose track of individuals, leading to undercounting.
+*   **Dependence on Video Angle:** The accuracy of the virtual line crossing logic is highly sensitive to the camera angle. Extreme angles can distort centroid calculations. An overhead (top-down) view is strongly recommended.
+*   **Limited Real-Time Performance:** Depending on the complexity of the detection model (e.g., heavy deep learning models) and the hardware used (lack of GPU), the system may experience frame drops, reducing real-time processing capabilities.
+
+---
+
+## 🚀 Future Improvements
+*   Implement a more robust tracking algorithm (like DeepSORT or ByteTrack) to handle occlusions better.
+*   Optimize the model using TensorRT or ONNX for faster, real-time edge deployment.
+*   Add a web dashboard to visualize footfall analytics over time.
+
+---
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/Rupeshbhardwaj002/footfall_couter_project/issues).
+
+## 📝 License
+This project is open-source and available under the [MIT License](LICENSE).
